@@ -91,7 +91,7 @@ class Batch extends Model
     public function recallTasks()
     {
         return $this->belongsToMany(RecallTask::class, 'recall_task_batches')
-            ->withPivot(['batch_no', 'batch_type', 'product_name', 'total_quantity', 'delivered_quantity');
+            ->withPivot(['batch_no', 'batch_type', 'product_name', 'total_quantity', 'delivered_quantity']);
     }
 
     public function lockedBy()
