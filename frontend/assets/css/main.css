@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.missing-row {
+  background-color: #fff1f0 !important;
+}
+
+.missing-row td {
+  color: #f56c6c !important;
+  font-weight: 600;
+}
+
+.overdue-row {
+  background-color: #fdf6ec !important;
+}
+
+.overdue-row td {
+  color: #e6a23c !important;
+}

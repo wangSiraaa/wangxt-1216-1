@@ -1,0 +1,34 @@
+{
+  "name": "food-recall-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "中央厨房食品召回系统前端",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@vueuse/core": "^10.9.0",
+    "axios": "^1.6.8",
+    "dayjs": "^1.11.10",
+    "element-plus": "^2.6.3",
+    "echarts": "^5.5.0",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@element-plus/nuxt": "^1.0.9",
+    "@nuxt/devtools": "latest",
+    "@nuxtjs/tailwindcss": "^6.11.4",
+    "@pinia/nuxt": "^0.5.1",
+    "nuxt": "^3.11.2",
+    "typescript": "^5.4.3",
+    "vue-tsc": "^2.0.7"
+  }
+}
