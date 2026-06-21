@@ -22,3 +22,19 @@ html, body {
 .overdue-row td {
   color: #e6a23c !important;
 }
+
+.quantity-abnormal-row {
+  background-color: #fff7e6 !important;
+}
+
+.quantity-abnormal-row td {
+  color: #e6a23c !important;
+}
+
+.remark-only-row {
+  background-color: #ecf5ff !important;
+}
+
+.remark-only-row td {
+  color: #409eff !important;
+}

@@ -173,12 +173,25 @@ class RecallTask extends Model
         $missing = $this->storeFeedbacks()->where('is_missing', true)->count();
         $confirmed = $this->storeFeedbacks()->where('status', StoreFeedback::STATUS_CONFIRMED)->count();
 
+        $quantityAbnormal = 0;
+        $remarkOnly = 0;
+        $allFeedbacks = $this->storeFeedbacks()->get();
+        foreach ($allFeedbacks as $fb) {
+            if ($fb->isQuantityAbnormal()) {
+                $quantityAbnormal++;
+            } elseif (! empty($fb->unshelved_reason) && ! $fb->isMissingReport() && ! $fb->isOverdue()) {
+                $remarkOnly++;
+            }
+        }
+
         return [
             'total' => $total,
             'submitted' => $submitted,
             'pending' => $pending,
             'missing' => $missing,
             'confirmed' => $confirmed,
+            'quantity_abnormal' => $quantityAbnormal,
+            'remark_only' => $remarkOnly,
             'submitted_rate' => $total > 0 ? round(($submitted / $total) * 100, 2) : 0,
         ];
     }

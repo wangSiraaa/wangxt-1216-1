@@ -179,6 +179,11 @@ class RecallTaskController extends Controller
             'fileAttachments',
         ]);
 
+        foreach ($recallTask->storeFeedbacks as $fb) {
+            $fb->abnormal_type = $fb->getAbnormalType();
+            $fb->abnormal_type_label = $fb->getAbnormalTypeLabel();
+        }
+
         $recallTask->feedback_stats = $recallTask->getFeedbackStats();
         $recallTask->off_shelf_stats = $recallTask->getOffShelfStats();
 

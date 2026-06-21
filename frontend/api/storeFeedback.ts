@@ -13,6 +13,14 @@ export interface StoreFeedbackData {
   store_id: number
   items: StoreFeedbackItemData[]
   remark?: string
+  unshelved_reason?: string
+}
+
+export type AbnormalType = 'normal' | 'missing' | 'quantity_abnormal' | 'remark_only'
+
+export interface StoreFeedbackAbnormalInfo {
+  abnormal_type: AbnormalType
+  abnormal_type_label: string
 }
 
 export const storeFeedbackApi = {

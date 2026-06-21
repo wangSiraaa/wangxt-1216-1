@@ -63,6 +63,11 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
+        foreach ($missingFeedbacks as $fb) {
+            $fb->abnormal_type = $fb->getAbnormalType();
+            $fb->abnormal_type_label = $fb->getAbnormalTypeLabel();
+        }
+
         return response()->json([
             'statistics' => [
                 'total_abnormals' => $totalAbnormals,
@@ -98,6 +103,17 @@ class DashboardController extends Controller
         $missing = (clone $query)->where('is_missing', true)->count();
         $overdue = (clone $query)->where('status', StoreFeedback::STATUS_OVERDUE)->count();
 
+        $quantityAbnormal = 0;
+        $remarkOnly = 0;
+        $allFeedbacks = (clone $query)->get();
+        foreach ($allFeedbacks as $fb) {
+            if ($fb->isQuantityAbnormal()) {
+                $quantityAbnormal++;
+            } elseif (! empty($fb->unshelved_reason) && ! $fb->isMissingReport() && ! $fb->isOverdue()) {
+                $remarkOnly++;
+            }
+        }
+
         $feedbacks = (clone $query)
             ->with(['store:id,code,name', 'recallTask:id,recall_no,title'])
             ->orderByRaw("CASE 
@@ -111,6 +127,11 @@ class DashboardController extends Controller
             ->limit(50)
             ->get();
 
+        foreach ($feedbacks as $fb) {
+            $fb->abnormal_type = $fb->getAbnormalType();
+            $fb->abnormal_type_label = $fb->getAbnormalTypeLabel();
+        }
+
         return response()->json([
             'summary' => [
                 'total' => $totalStores,
@@ -119,6 +140,8 @@ class DashboardController extends Controller
                 'confirmed' => $confirmed,
                 'missing' => $missing,
                 'overdue' => $overdue,
+                'quantity_abnormal' => $quantityAbnormal,
+                'remark_only' => $remarkOnly,
             ],
             'feedbacks' => $feedbacks,
         ]);

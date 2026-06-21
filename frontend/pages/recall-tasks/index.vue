@@ -65,16 +65,25 @@
             <span v-else class="text-gray-400">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="门店反馈" width="180">
+        <el-table-column label="门店反馈" width="260">
           <template #default="{ row }">
             <el-progress
               :percentage="row.feedback_stats?.submitted_rate || 0"
               :stroke-width="12"
             />
             <div class="text-xs text-gray-500 mt-1">
-              {{ row.feedback_stats?.submitted || 0 }} / {{ row.feedback_stats?.total || 0 }}
+              <span class="text-green-600">{{ row.feedback_stats?.submitted || 0 }}</span>
+              <span> / {{ row.feedback_stats?.total || 0 }}</span>
               <span class="text-red-500 ml-2" v-if="row.feedback_stats?.missing > 0">
                 漏报{{ row.feedback_stats?.missing }}
+              </span>
+            </div>
+            <div class="text-xs mt-1 space-x-2">
+              <span v-if="row.feedback_stats?.quantity_abnormal > 0" class="text-orange-600">
+                ⚠数量异常{{ row.feedback_stats?.quantity_abnormal }}
+              </span>
+              <span v-if="row.feedback_stats?.remark_only > 0" class="text-blue-600">
+                📝仅备注{{ row.feedback_stats?.remark_only }}
               </span>
             </div>
           </template>

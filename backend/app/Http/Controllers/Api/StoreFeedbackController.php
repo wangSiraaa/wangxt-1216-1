@@ -45,6 +45,11 @@ class StoreFeedbackController extends Controller
 
         $feedbacks = $query->paginate($request->input('per_page', 20));
 
+        foreach ($feedbacks as $fb) {
+            $fb->abnormal_type = $fb->getAbnormalType();
+            $fb->abnormal_type_label = $fb->getAbnormalTypeLabel();
+        }
+
         return response()->json($feedbacks);
     }
 
@@ -60,6 +65,7 @@ class StoreFeedbackController extends Controller
             'items.*.destroyed_quantity' => 'nullable|numeric|min:0',
             'items.*.sold_quantity' => 'nullable|numeric|min:0',
             'remark' => 'nullable|string',
+            'unshelved_reason' => 'nullable|string',
         ]);
 
         $existing = StoreFeedback::where('recall_task_id', $request->recall_task_id)
@@ -115,6 +121,7 @@ class StoreFeedbackController extends Controller
         $feedback->sold_quantity = $totalSold;
         $feedback->updateRemainingQuantity();
         $feedback->remark = $request->remark;
+        $feedback->unshelved_reason = $request->unshelved_reason;
         $feedback->is_missing = false;
         $feedback->save();
 
@@ -161,6 +168,9 @@ class StoreFeedbackController extends Controller
             'fileAttachments',
         ]);
 
+        $storeFeedback->abnormal_type = $storeFeedback->getAbnormalType();
+        $storeFeedback->abnormal_type_label = $storeFeedback->getAbnormalTypeLabel();
+
         return response()->json($storeFeedback);
     }
 
@@ -178,6 +188,7 @@ class StoreFeedbackController extends Controller
             'items.*.destroyed_quantity' => 'nullable|numeric|min:0',
             'items.*.sold_quantity' => 'nullable|numeric|min:0',
             'remark' => 'nullable|string',
+            'unshelved_reason' => 'nullable|string',
         ]);
 
         if ($request->filled('items')) {
@@ -224,6 +235,10 @@ class StoreFeedbackController extends Controller
 
         if ($request->filled('remark')) {
             $storeFeedback->remark = $request->remark;
+        }
+
+        if ($request->has('unshelved_reason')) {
+            $storeFeedback->unshelved_reason = $request->unshelved_reason;
         }
 
         $storeFeedback->is_missing = false;

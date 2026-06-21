@@ -27,6 +27,7 @@ class StoreFeedback extends Model
         'sold_quantity',
         'status',
         'remark',
+        'unshelved_reason',
         'submitted_at',
         'submitted_by',
         'confirmed_at',
@@ -144,5 +145,45 @@ class StoreFeedback extends Model
     {
         $remaining = max(0, $this->received_quantity - $this->off_shelf_quantity);
         $this->remaining_quantity = $remaining;
+    }
+
+    public function isQuantityAbnormal(): bool
+    {
+        if ($this->received_quantity <= 0) {
+            return false;
+        }
+        $totalAccounted = $this->off_shelf_quantity + $this->returned_quantity
+            + $this->destroyed_quantity + $this->sold_quantity;
+        return $this->off_shelf_quantity < $this->received_quantity
+            || bccomp((string) $totalAccounted, (string) $this->received_quantity, 2) < 0;
+    }
+
+    public function hasUnshelvedReasonOnly(): bool
+    {
+        return ! empty($this->unshelved_reason) && ! $this->isQuantityAbnormal() && ! $this->isMissingReport();
+    }
+
+    public function getAbnormalType(): string
+    {
+        if ($this->is_missing || $this->status === self::STATUS_OVERDUE) {
+            return 'missing';
+        }
+        if ($this->isQuantityAbnormal()) {
+            return 'quantity_abnormal';
+        }
+        if (! empty($this->unshelved_reason)) {
+            return 'remark_only';
+        }
+        return 'normal';
+    }
+
+    public function getAbnormalTypeLabel(): string
+    {
+        return match ($this->getAbnormalType()) {
+            'missing' => '漏报/逾期',
+            'quantity_abnormal' => '数量异常',
+            'remark_only' => '仅备注说明',
+            default => '正常',
+        };
     }
 }

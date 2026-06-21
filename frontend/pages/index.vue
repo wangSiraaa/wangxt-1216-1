@@ -94,14 +94,24 @@
               <el-progress :percentage="row.feedback_stats?.submitted_rate || 0" />
             </template>
           </el-table-column>
-          <el-table-column label="门店反馈" width="200">
+          <el-table-column label="门店反馈" width="280">
             <template #default="{ row }">
-              <span class="text-green-600">{{ row.feedback_stats?.submitted || 0 }}</span>
-              <span class="text-gray-400"> / </span>
-              <span>{{ row.feedback_stats?.total || 0 }}</span>
-              <span class="text-red-600 ml-2" v-if="row.feedback_stats?.missing > 0">
-                (漏报{{ row.feedback_stats?.missing }}家)
-              </span>
+              <div>
+                <span class="text-green-600">{{ row.feedback_stats?.submitted || 0 }}</span>
+                <span class="text-gray-400"> / </span>
+                <span>{{ row.feedback_stats?.total || 0 }}</span>
+                <span class="text-red-600 ml-2" v-if="row.feedback_stats?.missing > 0">
+                  漏报{{ row.feedback_stats?.missing }}
+                </span>
+              </div>
+              <div class="text-xs mt-1 space-x-2">
+                <span v-if="row.feedback_stats?.quantity_abnormal > 0" class="text-orange-600">
+                  ⚠数量异常{{ row.feedback_stats?.quantity_abnormal }}
+                </span>
+                <span v-if="row.feedback_stats?.remark_only > 0" class="text-blue-600">
+                  📝仅备注{{ row.feedback_stats?.remark_only }}
+                </span>
+              </div>
             </template>
           </el-table-column>
           <el-table-column label="状态" width="120">
@@ -116,9 +126,9 @@
         </el-table>
       </el-tab-pane>
 
-      <el-tab-pane label="漏报/逾期门店" name="missing">
+      <el-tab-pane label="漏报/异常门店" name="missing">
         <el-alert
-          title="门店漏报下架数量将在此处标红展示，总部需及时跟进"
+          title="门店漏报、数量异常、备注说明等情况将在此处分类展示，品控主管可针对性跟进"
           type="warning"
           :closable="false"
           class="mb-4"
@@ -136,19 +146,43 @@
               <div class="text-gray-400 text-sm">{{ row.recallTask?.recall_no }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="应下架数量" prop="received_quantity" width="140" align="right" />
-          <el-table-column label="已下架数量" prop="off_shelf_quantity" width="140" align="right" />
-          <el-table-column label="状态" width="150">
+          <el-table-column label="应下架" prop="received_quantity" width="90" align="right" />
+          <el-table-column label="已下架" prop="off_shelf_quantity" width="90" align="right" />
+          <el-table-column label="剩余未下架" prop="remaining_quantity" width="100" align="right">
             <template #default="{ row }">
-              <el-tag v-if="row.is_missing" type="danger">
+              <span v-if="row.remaining_quantity > 0" class="font-semibold text-orange-600">
+                {{ row.remaining_quantity }}
+              </span>
+              <span v-else class="text-gray-400">0</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="异常分类" width="130">
+            <template #default="{ row }">
+              <el-tag v-if="row.abnormal_type === 'missing'" type="danger">
                 <el-icon><WarningFilled /></el-icon>
-                漏报(标红)
+                漏报/逾期
               </el-tag>
+              <el-tag v-else-if="row.abnormal_type === 'quantity_abnormal'" type="warning">数量异常</el-tag>
+              <el-tag v-else-if="row.abnormal_type === 'remark_only'" type="info" effect="plain">仅备注说明</el-tag>
+              <el-tag v-else type="success" effect="dark">正常</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="未下架原因/补充说明" min-width="200" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span v-if="row.unshelved_reason" class="text-gray-700">{{ row.unshelved_reason }}</span>
+              <span v-else class="text-gray-400">-</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="130">
+            <template #default="{ row }">
+              <el-tag v-if="row.is_missing" type="danger">漏报标红</el-tag>
               <el-tag v-else-if="row.status === 'overdue'" type="warning">
                 <el-icon><Clock /></el-icon>
                 逾期未报
               </el-tag>
-              <el-tag v-else type="info">待反馈</el-tag>
+              <el-tag v-else-if="row.status === 'pending'" type="info">待反馈</el-tag>
+              <el-tag v-else-if="row.status === 'submitted'" type="primary">已反馈</el-tag>
+              <el-tag v-else type="success">已确认</el-tag>
             </template>
           </el-table-column>
         </el-table>
@@ -196,8 +230,10 @@ const summary = ref<any>(null)
 const activeTab = ref('tasks')
 
 const missingRowClassName = ({ row }: any) => {
-  if (row.is_missing) return 'missing-row'
+  if (row.abnormal_type === 'missing' || row.is_missing) return 'missing-row'
   if (row.status === 'overdue') return 'overdue-row'
+  if (row.abnormal_type === 'quantity_abnormal') return 'quantity-abnormal-row'
+  if (row.abnormal_type === 'remark_only') return 'remark-only-row'
   return ''
 }
 

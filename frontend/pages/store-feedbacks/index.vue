@@ -32,6 +32,14 @@
             <el-option label="总部已确认" value="confirmed" />
           </el-select>
         </el-form-item>
+        <el-form-item label="异常分类">
+          <el-select v-model="query.abnormal_type" placeholder="全部" clearable @change="loadData">
+            <el-option label="漏报/逾期" value="missing" />
+            <el-option label="数量异常" value="quantity_abnormal" />
+            <el-option label="仅备注说明" value="remark_only" />
+            <el-option label="正常" value="normal" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="漏报">
           <el-select v-model="query.is_missing" placeholder="全部" clearable @change="loadData">
             <el-option label="漏报(标红)" :value="1" />
@@ -69,31 +77,53 @@
             <div class="text-gray-400 text-sm">{{ row.recallTask?.recall_no }}</div>
           </template>
         </el-table-column>
-        <el-table-column label="应下架" prop="received_quantity" width="120" align="right" />
-        <el-table-column label="已下架" prop="off_shelf_quantity" width="120" align="right">
+        <el-table-column label="应下架" prop="received_quantity" width="100" align="right" />
+        <el-table-column label="已下架" prop="off_shelf_quantity" width="100" align="right">
           <template #default="{ row }">
             <span class="font-semibold" :class="row.off_shelf_quantity > 0 ? 'text-green-600' : ''">
               {{ row.off_shelf_quantity }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="退回总部" prop="returned_quantity" width="120" align="right" />
-        <el-table-column label="门店销毁" prop="destroyed_quantity" width="120" align="right" />
-        <el-table-column label="已售出" prop="sold_quantity" width="100" align="right" />
-        <el-table-column label="状态" width="150">
+        <el-table-column label="剩余未下架" prop="remaining_quantity" width="110" align="right">
           <template #default="{ row }">
-            <el-tag v-if="row.is_missing" type="danger">
+            <span v-if="row.remaining_quantity > 0" class="font-semibold text-orange-600">
+              {{ row.remaining_quantity }}
+            </span>
+            <span v-else class="text-gray-400">0</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="退回总部" prop="returned_quantity" width="100" align="right" />
+        <el-table-column label="门店销毁" prop="destroyed_quantity" width="100" align="right" />
+        <el-table-column label="已售出" prop="sold_quantity" width="80" align="right" />
+        <el-table-column label="异常分类" width="130">
+          <template #default="{ row }">
+            <el-tag v-if="row.abnormal_type === 'missing'" type="danger">
               <el-icon><WarningFilled /></el-icon>
-              漏报(标红)
+              漏报/逾期
             </el-tag>
+            <el-tag v-else-if="row.abnormal_type === 'quantity_abnormal'" type="warning">数量异常</el-tag>
+            <el-tag v-else-if="row.abnormal_type === 'remark_only'" type="info" effect="plain">仅备注说明</el-tag>
+            <el-tag v-else type="success" effect="dark">正常</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="未下架原因/补充说明" min-width="200" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span v-if="row.unshelved_reason" class="text-gray-700">{{ row.unshelved_reason }}</span>
+            <span v-else class="text-gray-400">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }">
+            <el-tag v-if="row.is_missing" type="danger">漏报标红</el-tag>
             <el-tag v-else-if="row.status === 'overdue'" type="warning">逾期未报</el-tag>
             <el-tag v-else-if="row.status === 'pending'" type="info">待反馈</el-tag>
             <el-tag v-else-if="row.status === 'submitted'" type="primary">已反馈</el-tag>
             <el-tag v-else type="success">已确认</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="submitted_at" label="提交时间" width="180" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column prop="submitted_at" label="提交时间" width="170" />
+        <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="viewDetail(row.id)">查看</el-button>
             <el-button link type="primary" @click="editFeedback(row)">编辑</el-button>
@@ -105,24 +135,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { WarningFilled } from '@element-plus/icons-vue'
 import { storeFeedbackApi, recallTaskApi } from '~/api'
 import { ElMessage } from 'element-plus'
 
-const list = ref<any[]>([])
+const rawList = ref<any[]>([])
 const recallTasks = ref<any[]>([])
 
 const query = reactive({
   recall_task_id: undefined as number | undefined,
   store_keyword: '',
   status: '',
+  abnormal_type: '' as string,
   is_missing: undefined as number | undefined,
 })
 
+const list = computed(() => {
+  let result = rawList.value
+  if (query.abnormal_type) {
+    result = result.filter((r: any) => r.abnormal_type === query.abnormal_type)
+  }
+  if (query.store_keyword) {
+    const kw = query.store_keyword.toLowerCase()
+    result = result.filter((r: any) => {
+      const code = (r.store?.code || r.store_code || '').toLowerCase()
+      const name = (r.store?.name || r.store_name || '').toLowerCase()
+      return code.includes(kw) || name.includes(kw)
+    })
+  }
+  return result
+})
+
 const rowClassName = ({ row }: any) => {
-  if (row.is_missing) return 'missing-row'
+  if (row.abnormal_type === 'missing' || row.is_missing) return 'missing-row'
   if (row.status === 'overdue') return 'overdue-row'
+  if (row.abnormal_type === 'quantity_abnormal') return 'quantity-abnormal-row'
+  if (row.abnormal_type === 'remark_only') return 'remark-only-row'
   return ''
 }
 
@@ -131,8 +180,10 @@ const loadData = async () => {
     const params: any = { ...query }
     if (params.is_missing === undefined) delete params.is_missing
     if (params.recall_task_id === undefined) delete params.recall_task_id
+    delete params.abnormal_type
+    delete params.store_keyword
     const response = await storeFeedbackApi.list(params)
-    list.value = response.data.data || response.data
+    rawList.value = response.data.data || response.data
   } catch (e) {}
 }
 
